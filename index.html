@@ -135,6 +135,16 @@ header{position:relative;z-index:30}
 #menu h4{margin:6px 10px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
 body.hidePal #palette,body.hideSide #side{display:none}
 #sideHandle{display:none}
+.tool kbd{margin-left:auto;font:600 10.5px ui-monospace,Menlo,Consolas,monospace;color:#5b6876;background:#eef1f5;border:1px solid #d5dbe2;border-bottom-width:2px;border-radius:5px;padding:1px 5px;white-space:nowrap}
+.kn{position:absolute;top:0;left:0;font:700 10.5px ui-monospace,Menlo,Consolas,monospace;background:#16202b;color:#fff;border-radius:5px;padding:1px 5px}
+.pbb,.estopb,.tog{position:relative}.tog .kn{position:static;margin-right:2px}
+#kbHelp{position:fixed;inset:0;background:rgba(15,23,32,.55);display:grid;place-items:center;z-index:12}#kbHelp[hidden]{display:none}
+#kbHelp .box{background:#fff;border-radius:12px;padding:16px 18px;width:min(720px,94vw);max-height:90vh;overflow:auto}
+#kbHelp h3{margin:0 0 4px;font-size:17px}#kbHelp h4{margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+#kbHelp .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 18px}
+#kbHelp .k{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:3px 0}
+#kbHelp kbd{white-space:nowrap;min-width:28px;text-align:center;font:600 12px ui-monospace,Menlo,Consolas,monospace;background:#eef1f5;border:1px solid #d5dbe2;border-bottom-width:2px;border-radius:5px;padding:2px 6px}
+@media (hover:none),(max-width:900px){.tool kbd,.kn{display:none}}
 @media (max-width:1250px){#palette{width:180px}#side{width:256px}.tool{font-size:11.5px;gap:5px}}
 @media (max-width:900px){
  html,body{height:100%;height:100dvh}
@@ -184,6 +194,7 @@ body.hidePal #palette,body.hideSide #side{display:none}
     <hr><h4>Affichage</h4>
     <button class="mi" id="mPal">🧰 Palette <span class="k" id="mPalK"></span></button>
     <button class="mi" id="mSide">🎛️ Panneau de droite <span class="k" id="mSideK"></span></button>
+    <button class="mi" id="mKeys">⌨️ Raccourcis clavier <span class="k">?</span></button>
     <button class="mi" id="mHelp">❓ Comment ça marche</button>
   </div>
 </header>
@@ -210,6 +221,7 @@ body.hidePal #palette,body.hideSide #side{display:none}
       <summary>Comment ça marche</summary>
       <ul>
         <li><b>Montage</b> : glisse un symbole de la palette jusqu'à une case (ou choisis-le, puis clique dans les cases). Glisse un symbole déjà placé pour le déplacer; sur une case occupée, les deux s'échangent. Ctrl + glisser fait une copie.</li><li> Avec l'outil <b>Fil</b>, glisse pour tracer plusieurs fils d'un coup.</li>
+        <li><b>Raccourcis clavier</b> (ordinateur) : appuie sur <b>?</b> pour la liste. Ex. R relais, M moteur, C contact NO, Maj+C contact NF, L fil, Tab pour passer en simulation, 1 à 9 pour actionner les boutons.</li>
         <li><b>Se déplacer et zoomer</b> : glisse dans une zone vide du schéma pour le déplacer. Sur écran tactile, pince avec deux doigts pour zoomer. À l'ordinateur, Ctrl + molette. Les boutons − / Ajuster / + font la même chose.</li>
         <li>Le menu <b>☰</b> regroupe les exemples, le circuit de puissance, la taille de la grille, l'export et l'import. Les boutons 🧰 et 🎛️ cachent la palette et le panneau pour donner plus de place au schéma.</li>
         <li>Clique sur le <b>titre d'un circuit</b> pour changer son nom et les repères des rails. Clique à <b>droite d'une ligne</b> pour la nommer.</li>
@@ -224,6 +236,7 @@ body.hidePal #palette,body.hideSide #side{display:none}
   </aside>
 </main>
 <canvas id="ghost"></canvas>
+<div id="kbHelp" hidden><div class="box"><div style="display:flex;align-items:center"><h3>⌨️ Raccourcis clavier</h3><span class="sp"></span><button class="del" id="kbClose" style="border:1px solid #cfd6de;background:#f8fafc;border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit">Fermer</button></div><div id="kbBody"></div></div></div>
 <div id="fmodal" class="fm" hidden><form class="box" id="fform"><h3 id="ftitle"></h3><div id="ffields"></div>
   <div class="mrow"><span class="sp"></span><button type="button" id="fcancel">Annuler</button><button type="submit" class="pri">OK</button></div></form></div>
 <div id="modal" hidden><div class="box">
@@ -734,9 +747,65 @@ document.addEventListener('keydown',ev=>{
   const inField=/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName||'');
   if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==='z'&&!inField){ev.preventDefault();doUndo();return;}
   if(inField)return;
-  if((ev.key==='Delete'||ev.key==='Backspace')&&selected&&mode==='edit'){pushUndo();delete D.cells[selected];selected=null;changed();renderProps();}
-  if(ev.key==='Escape'){setTool('select');}
+  if(!$('kbHelp').hidden){if(ev.key==='Escape'||ev.key==='?')$('kbHelp').hidden=true;return;}
+  if(!$('modal').hidden||!$('fmodal').hidden){if(ev.key==='Escape'){$('modal').hidden=true;$('fmodal').hidden=true;}return;}
+  if(ev.ctrlKey||ev.metaKey||ev.altKey)return;
+  const k=ev.key;
+  if(k==='?'){showKeys();ev.preventDefault();return;}
+  if(k==='Tab'){ev.preventDefault();setMode(mode==='edit'?'sim':'edit');return;}
+  if(k==='+'||k==='='){applyZoom((lastZ||1)*1.2);return;}
+  if(k==='-'||k==='_'){applyZoom((lastZ||1)/1.2);return;}
+  if(k==='0'&&mode==='edit'){fit=true;$('zFit').classList.add('on');return;}
+  if(k==='Escape'){menu.hidden=true;setTool('select');return;}
+  if(mode==='sim'){
+    if(/^[1-9]$/.test(k)&&!ev.repeat){const it=simKeys[+k-1];if(it)simKey(it,true);return;}
+    if(k==='0'){S.power=!S.power;return;}
+    return;
+  }
+  if((k==='Delete'||k==='Backspace')&&selected){pushUndo();delete D.cells[selected];selected=null;changed();renderProps();return;}
+  if(k.startsWith('Arrow')&&selected){
+    ev.preventDefault();const[r,c]=selected.split(',').map(Number);
+    const nr=r+(k==='ArrowDown')-(k==='ArrowUp'),nc=c+(k==='ArrowRight')-(k==='ArrowLeft');
+    if(nr<0||nc<0||nr>=D.rows||nc>=D.cols)return;
+    const nk=nr+','+nc;
+    if(ev.shiftKey){selected=D.cells[nk]?nk:selected;if(!D.cells[nk])selected=null;renderProps();return;}
+    pushUndo();const tgt=D.cells[nk];D.cells[nk]=D.cells[selected];if(tgt)D.cells[selected]=tgt;else delete D.cells[selected];selected=nk;changed();renderProps();return;
+  }
+  const id=KEYMAP[ev.shiftKey?k.toUpperCase():k.toLowerCase()];
+  if(id){
+    ev.preventDefault();setTool(id);
+    const h=hover&&cellAt(hover);
+    if(h&&TYPES[id]&&id!=='wire'){pushUndo();place(id,h);}
+  }
 });
+document.addEventListener('keyup',ev=>{
+  if(mode!=='sim')return;
+  if(/^[1-9]$/.test(ev.key)){const it=simKeys[+ev.key-1];if(it)simKey(it,false);}
+});
+/* raccourcis : lettre = outil (Maj = variante) */
+const KEYMAP={l:'wire',b:'branch',g:'erase',u:'estop',p:'pbno',P:'pbnf',s:'sel',f:'lsno',F:'lsnf',c:'no',C:'nf',t:'tno',T:'tnf',o:'ol',O:'olh',r:'coil',R:'timer',v:'lamp',m:'motor',h:'heater',a:'bulb'};
+const KEYOF={select:'Échap'};for(const[k,v]of Object.entries(KEYMAP))KEYOF[v]=(k!==k.toLowerCase()?'Maj+':'')+k.toUpperCase();
+let simKeys=[];
+function simKey(it,down){
+  const[kind,t]=it;
+  if(kind==='pb'){if(down){S.pressed[t]=true;heldPB=t;}else{S.pressed[t]=false;if(heldPB===t)heldPB=null;}return;}
+  if(!down)return;
+  if(kind==='es')S.estop[t]=!S.estop[t];
+  else if(kind==='sel')S.sel[t]=(S.sel[t]||1)===1?2:1;
+  else if(kind==='ls')S.ls[t]=!S.ls[t];
+  else if(kind==='ol')S.ol[t]=!S.ol[t];
+}
+function showKeys(){
+  menu.hidden=true;
+  const tools=Object.entries(KEYOF).map(([id,k])=>`<div class="k"><kbd>${esc(k)}</kbd>${esc(id==='select'?'Sélectionner':id==='wire'?'Fil (ligne)':id==='branch'?'Branche parallèle':id==='erase'?'Gomme':TYPES[id])}</div>`).join('');
+  const kb=(k,t)=>`<div class="k"><kbd>${k}</kbd>${t}</div>`;
+  $('kbBody').innerHTML=`<p style="font-size:13px;color:#55626f;margin:6px 0">En <b>Montage</b>, la lettre choisit le symbole. Si la souris est au-dessus d'une case, le symbole y est placé tout de suite. <b>Maj</b> donne la variante (NF, temporisé, etc.).</p>
+  <h4>Symboles (Montage)</h4><div class="grid">${tools}</div>
+  <h4>Édition</h4><div class="grid">${kb('Suppr','Effacer le symbole choisi')}${kb('Flèches','Déplacer le symbole choisi')}${kb('Maj+Flèches','Choisir la case voisine')}${kb('Ctrl+Z','Annuler')}${kb('Clic droit','Effacer')}${kb('Ctrl+glisser','Copier un symbole')}</div>
+  <h4>Simulation</h4><div class="grid">${kb('1 à 9','Actionner les commandes (numéros affichés dans le panneau)')}${kb('0','Ouvrir/fermer le sectionneur')}${kb('Maj+clic','Garder un bouton enfoncé')}</div>
+  <h4>Général</h4><div class="grid">${kb('Tab','Basculer Montage / Simulation')}${kb('+ / −','Zoom avant / arrière')}${kb('0','Ajuster (en Montage)')}${kb('Ctrl+molette','Zoom à la souris')}${kb('?','Afficher cette liste')}</div>`;
+  $('kbHelp').hidden=false;
+}
 
 /* ---------- état / sauvegarde ---------- */
 function pushUndo(){undo.push(JSON.stringify(D));if(undo.length>100)undo.shift();}
@@ -788,6 +857,13 @@ function renderDevices(){
   }
   if(!h)h='<p style="font-size:12.5px;color:#6b7785;margin-top:14px">Ajoute des boutons, des bobines ou des voyants : ils apparaîtront ici.</p>';
   $('devs').innerHTML=h;
+  simKeys=[];
+  $('devs').querySelectorAll('[data-es],[data-pb],[data-sel],[data-ls],[data-ol]').forEach(b=>{
+    if(simKeys.length>=9)return;
+    const kind=b.dataset.es?'es':b.dataset.pb?'pb':b.dataset.sel?'sel':b.dataset.ls?'ls':'ol';
+    simKeys.push([kind,b.dataset[kind]]);
+    const n=document.createElement('kbd');n.className='kn';n.textContent=simKeys.length;n.title='Touche '+simKeys.length;b.prepend(n);
+  });
 }
 const devs=$('devs');
 devs.addEventListener('pointerdown',ev=>{
@@ -876,7 +952,7 @@ const PAL=[
 ];
 function buildPalette(){
   const pal=$('palette');let h='';
-  for(const[g,items]of PAL){h+=`<h3 class="t">${g}</h3>`;for(const[id,name,ic]of items)h+=`<button class="tool" data-tool="${id}">${ic?`<span class="ic">${ic}</span>`:`<canvas data-icon="${id}"></canvas>`}<span>${name}</span></button>`;}
+  for(const[g,items]of PAL){h+=`<h3 class="t">${g}</h3>`;for(const[id,name,ic]of items){const kk=KEYOF[id];h+=`<button class="tool" data-tool="${id}" title="${esc(name)}${kk?' ('+kk+')':''}">${ic?`<span class="ic">${ic}</span>`:`<canvas data-icon="${id}"></canvas>`}<span>${name}</span>${kk?`<kbd>${kk}</kbd>`:''}</button>`;}}
   pal.innerHTML=h;
   const dpr=Math.min(4,Math.max(3,(window.devicePixelRatio||1)*1.5));
   pal.querySelectorAll('canvas[data-icon]').forEach(c=>{
@@ -924,6 +1000,7 @@ $('tPal').onclick=$('mPal').onclick=()=>{ui.pal=!ui.pal;applyUI();};
 $('tSide').onclick=$('mSide').onclick=()=>{ui.side=!ui.side;applyUI();};
 function openSheet(o){const sd=$('side');sd.classList.toggle('open',o);$('sideHandleA').textContent=o?'▼':'▲';if(o)sd.scrollTop=0;}
 $('sideHandle').onclick=()=>openSheet(!$('side').classList.contains('open'));
+$('mKeys').onclick=showKeys;$('kbClose').onclick=()=>{$('kbHelp').hidden=true;};$('kbHelp').addEventListener('click',ev=>{if(ev.target.id==='kbHelp')$('kbHelp').hidden=true;});
 $('mHelp').onclick=()=>{if(isMobile())openSheet(true);else{ui.side=true;applyUI();}const h=$('help');h.open=true;setTimeout(()=>h.scrollIntoView({behavior:'smooth',block:'start'}),300);};
 applyUI();
 if(isMobile()){fit=false;zoom=.85;$('zFit').classList.remove('on');}
