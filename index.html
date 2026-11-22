@@ -51,7 +51,6 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .ban.info{background:#e8eef6;color:#33475b;border:1px solid #cfd9e6}
 .ban button{margin-left:auto;border:0;background:#8a1c1c;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font:inherit;font-size:12.5px}
 #cv{display:block;margin:10px 12px 24px;background:#fff;border:1px solid var(--line);border-radius:10px;touch-action:none;box-shadow:0 1px 3px rgba(0,0,0,.05);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-body.sim #cv{touch-action:pan-x pan-y}
 button,select{touch-action:manipulation}
 #side{width:300px;flex:none;background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:4px 12px 20px}
 body.sim #palette,body.sim #props{display:none}
@@ -118,21 +117,47 @@ header .btn.on{background:#ffb347;color:#16202b;border-color:#ffb347;font-weight
 .mrow button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
 #mmsg{color:#1e6b34}
 .sh{display:none}
+html,body{height:100%;overflow:hidden}
+header{position:relative;z-index:30}
+.btn.ic{min-width:38px;font-size:16px;padding:4px 9px}
+.btn.tg{opacity:.55}.btn.tg.on{opacity:1;background:#3b4a5c;border-color:#5b6b7e}
+#menu{position:absolute;right:10px;top:calc(100% + 6px);background:#fff;color:var(--ink);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.25);padding:8px;width:300px;max-height:calc(100vh - 80px);overflow:auto}
+#menu[hidden],#menu .mi[hidden]{display:none}
+#menu .mi{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px;border-radius:8px;font:inherit;font-size:14px;cursor:pointer;text-align:left;color:var(--ink)}
+#menu .mi:hover{background:#f0f3f7}
+#menu .mi .k{margin-left:auto;font-size:12px;color:var(--muted)}
+#menu .mi.on .k{color:#b86e00;font-weight:650}
+#menu select{width:100%;padding:9px 10px;border:1px solid #cfd6de;border-radius:8px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}
+#menu hr{border:0;border-top:1px solid var(--line);margin:6px 2px}
+#menu .row{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:14px}
+#menu .row span{flex:1}
+#menu .row button{width:40px;height:34px;border:1px solid #cfd6de;background:#f8fafc;border-radius:8px;font-size:18px;cursor:pointer}
+#menu h4{margin:6px 10px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+body.hidePal #palette,body.hideSide #side{display:none}
+#sideHandle{display:none}
 @media (max-width:1250px){#palette{width:180px}#side{width:256px}.tool{font-size:11.5px;gap:5px}}
 @media (max-width:900px){
- html,body{height:auto;min-height:100%}
- main{flex-direction:column;flex:none}
- #palette{width:auto;display:flex;flex-wrap:nowrap;overflow-x:auto;gap:2px;padding:4px 6px;border-right:0;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+ html,body{height:100%;height:100dvh}
+ header{padding:6px 8px;gap:6px}header h1{display:none}
+ .seg button{padding:8px 12px;font-size:14px}
+ #tPal,#tSide{display:none}
+ #mPal,#mSide{display:none}
+ #menu{position:fixed;left:8px;right:8px;width:auto;top:58px;max-height:calc(100dvh - 70px)}
+ main{flex-direction:column;min-height:0}
+ body.hidePal #palette,#palette{width:auto;flex:none;display:flex;flex-wrap:nowrap;overflow-x:auto;gap:2px;padding:4px 6px;border-right:0;border-bottom:1px solid var(--line);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+ body.sim #palette{display:none}
  #palette h3.t{display:none}
  .tool{flex:none;width:76px;flex-direction:column;gap:0;padding:2px;font-size:10px;text-align:center;line-height:1.15}
  .tool .ic,.tool canvas{width:54px;height:32px}
  .tool[data-drag]{touch-action:pan-x}
- #stage{flex:none;overflow:visible}
- #side{width:auto;border-left:0;border-top:1px solid var(--line)}
- header{padding:6px 8px;gap:5px}header h1{font-size:14px;width:100%;margin:0}
- header .btn,header select{padding:5px 8px;font-size:12.5px}
- .lbl{display:none}.sh{display:inline}
- #cv{margin:8px auto 14px}
+ #stage{flex:1;min-height:0;overflow:auto;padding-bottom:120px}
+ body.hideSide #side,#side{display:block;position:fixed;left:0;right:0;bottom:0;width:auto;max-height:70dvh;z-index:25;border:0;border-radius:16px 16px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.18);padding:0 12px 24px;transform:translateY(calc(100% - 48px));transition:transform .22s ease;overflow:hidden}
+ #side.open{transform:none;overflow:auto}
+ #sideHandle{display:flex;align-items:center;justify-content:center;gap:8px;position:sticky;top:0;z-index:2;width:calc(100% + 24px);margin:0 -12px 4px;height:48px;border:0;background:#fff;border-bottom:1px solid var(--line);font:inherit;font-size:14px;font-weight:650;color:var(--ink);cursor:pointer;border-radius:16px 16px 0 0;padding-top:6px}
+ #sideHandle::before{content:"";position:absolute;top:6px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:#cfd6de}
+ #zoombar{position:fixed;left:8px;right:8px;bottom:58px;padding:0;gap:8px;z-index:20}
+ #zoombar button{min-width:46px;height:44px;font-size:17px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+ #cv{margin:10px}
 }
 </style>
 </head>
@@ -140,21 +165,34 @@ header .btn.on{background:#ffb347;color:#16202b;border-color:#ffb347;font-weight
 <header>
   <h1>Simulateur <span>à relais</span></h1>
   <div class="seg"><button id="mEdit" class="on">✏️ Montage</button><button id="mSim">▶ Simulation</button></div>
-  <select id="exSel" title="Charger un exemple"><option value="">Exemples…</option></select>
-  <button class="btn" id="bNew">Nouveau</button>
-  <button class="btn" id="bUndo" title="Ctrl+Z">↶ Annuler</button>
-  <button class="btn" id="bPower" title="Ajouter ou enlever un circuit de puissance séparé">⚡ Circuit de puissance</button>
+  <button class="btn ic" id="bUndo" title="Annuler (Ctrl+Z)">↶</button>
   <span class="sp"></span>
-  <span class="sizer"><span class="lbl">Rangées</span><span class="sh">↕</span> <button class="btn" id="rMinus">−</button><button class="btn" id="rPlus">+</button></span>
-  <span class="sizer"><span class="lbl">Colonnes</span><span class="sh">↔</span> <button class="btn" id="cMinus">−</button><button class="btn" id="cPlus">+</button></span>
-  <button class="btn" id="bExport">Exporter</button>
-  <button class="btn" id="bImport">Importer</button>
-  <button class="btn" id="bInstall" hidden>📲 Installer</button>
+  <button class="btn ic tg on" id="tPal" title="Afficher ou cacher la palette">🧰</button>
+  <button class="btn ic tg on" id="tSide" title="Afficher ou cacher le panneau de droite">🎛️</button>
+  <button class="btn" id="bMenu" title="Menu">☰ Menu</button>
+  <div id="menu" hidden>
+    <h4>Schéma</h4>
+    <div style="padding:2px 6px 6px"><select id="exSel" title="Charger un exemple"><option value="">Charger un exemple…</option></select></div>
+    <button class="mi" id="bNew">🗒️ Nouveau schéma</button>
+    <button class="mi" id="bPower">⚡ Circuit de puissance séparé <span class="k" id="bPowerK">non</span></button>
+    <div class="row"><span>↕ Lignes</span><button id="rMinus">−</button><button id="rPlus">+</button></div>
+    <div class="row"><span>↔ Colonnes</span><button id="cMinus">−</button><button id="cPlus">+</button></div>
+    <hr><h4>Fichier</h4>
+    <button class="mi" id="bExport">📤 Exporter le schéma</button>
+    <button class="mi" id="bImport">📥 Importer un schéma</button>
+    <button class="mi" id="bInstall" hidden>📲 Installer l'application</button>
+    <hr><h4>Affichage</h4>
+    <button class="mi" id="mPal">🧰 Palette <span class="k" id="mPalK"></span></button>
+    <button class="mi" id="mSide">🎛️ Panneau de droite <span class="k" id="mSideK"></span></button>
+    <button class="mi" id="mHelp">❓ Comment ça marche</button>
+  </div>
 </header>
+
 <main>
   <aside id="palette"></aside>
   <section id="stage"><div id="stickytop"><div id="zoombar"><button id="zProps" hidden>✎ Propriétés</button><button id="zDel" hidden>🗑 Supprimer</button><span style="flex:1"></span><button id="zOut" title="Zoom arrière">−</button><button id="zFit" class="on" title="Ajuster à la largeur">Ajuster</button><button id="zIn" title="Zoom avant">+</button></div><div id="banner"></div></div><canvas id="cv"></canvas></section>
   <aside id="side">
+    <button id="sideHandle"><span id="sideHandleT">Propriétés et commandes</span> <span id="sideHandleA">▲</span></button>
     <div id="props"></div>
     <h3 class="t">Alimentation</h3>
     <button class="tog" id="pwr"><b>Sectionneur</b><span class="st"></span></button>
@@ -168,10 +206,12 @@ header .btn.on{background:#ffb347;color:#16202b;border-color:#ffb347;font-weight
       <div><span class="sw" style="background:repeating-linear-gradient(90deg,#e5383b 0 6px,#ffec8c 6px 10px)"></span>Courant qui circule</div>
       <div><span class="sw" style="background:#2f9e44;opacity:.5;height:10px;width:12px;margin-left:7px;margin-right:15px"></span>Contact fermé (zone pleine)</div>
     </div>
-    <details>
+    <details id="help">
       <summary>Comment ça marche</summary>
       <ul>
         <li><b>Montage</b> : glisse un symbole de la palette jusqu'à une case (ou choisis-le, puis clique dans les cases). Glisse un symbole déjà placé pour le déplacer; sur une case occupée, les deux s'échangent. Ctrl + glisser fait une copie.</li><li> Avec l'outil <b>Fil</b>, glisse pour tracer plusieurs fils d'un coup.</li>
+        <li><b>Se déplacer et zoomer</b> : glisse dans une zone vide du schéma pour le déplacer. Sur écran tactile, pince avec deux doigts pour zoomer. À l'ordinateur, Ctrl + molette. Les boutons − / Ajuster / + font la même chose.</li>
+        <li>Le menu <b>☰</b> regroupe les exemples, le circuit de puissance, la taille de la grille, l'export et l'import. Les boutons 🧰 et 🎛️ cachent la palette et le panneau pour donner plus de place au schéma.</li>
         <li>Clique sur le <b>titre d'un circuit</b> pour changer son nom et les repères des rails. Clique à <b>droite d'une ligne</b> pour la nommer.</li>
         <li><b>⚡ Circuit de puissance</b> ajoute une section séparée (L1/L2) en haut : ses contacts suivent les bobines du circuit de commande qui portent le même repère.</li>
         <li><b>Branche parallèle</b> : clique entre deux rangées, vis-à-vis d'une jonction, pour ajouter ou enlever un lien vertical.</li>
@@ -422,6 +462,19 @@ const CODE={no:'NO',nf:'NF',ol:'NF'};
 function timedCode(e){const m=timerCfg(e.tag).mode;if(e.type==='tno')return m==='TON'?'NO-TF':'NO-TO';return m==='TON'?'NF-TO':'NF-TF';}
 
 let lastW=0,lastH=0,lastZ=0,zoom=1,fit=true;
+function sizeCanvas(){
+  const W=ML+D.cols*CW+MR,H=canvasH(),z=cssScale(W);
+  if(W!==lastW||H!==lastH||z!==lastZ){cv.style.width=(W*z)+'px';cv.style.height=(H*z)+'px';lastW=W;lastH=H;lastZ=z;}
+  return z;
+}
+function applyZoom(nz,cx,cy){
+  const st=document.getElementById('stage'),sr=st.getBoundingClientRect(),cr=cv.getBoundingClientRect(),oz=lastZ||1;
+  if(cx==null){cx=sr.left+sr.width/2;cy=sr.top+sr.height/2;}
+  const px=(cx-cr.left)/oz,py=(cy-cr.top)/oz;
+  nz=Math.round(Math.max(.25,Math.min(2.5,nz))*100)/100;
+  fit=false;zoom=nz;document.getElementById('zFit').classList.remove('on');sizeCanvas();
+  st.scrollLeft=cv.offsetLeft+px*nz-(cx-sr.left);st.scrollTop=cv.offsetTop+py*nz-(cy-sr.top);
+}
 function cssScale(W){
   if(!fit)return zoom;
   const st=document.getElementById('stage');const avail=(st.clientWidth||W)-28;
@@ -429,8 +482,7 @@ function cssScale(W){
 }
 function draw(R,fl,t){
   const C=D.cols,RW=D.rows,W=ML+C*CW+MR,H=canvasH(),P=pRows();
-  const z=cssScale(W);
-  if(W!==lastW||H!==lastH||z!==lastZ){cv.style.width=(W*z)+'px';cv.style.height=(H*z)+'px';lastW=W;lastH=H;lastZ=z;}
+  sizeCanvas();
   // Résolution réelle à l'écran : échelle Windows + zoom du navigateur + agrandissement de la page.
   const bw=cv.getBoundingClientRect().width||W;
   const dpr=Math.round(Math.min(4,Math.max(2,(window.devicePixelRatio||1)*(bw/W)*1.25))*4)/4;
@@ -591,14 +643,25 @@ function pressPB(t,ev){
 }
 function releasePB(){clearTimeout(lpTimer);if(heldPB){S.pressed[heldPB]=false;heldPB=null;}}
 const INPUTS=new Set(['pbno','pbnf','estop','sel','lsno','lsnf','ol','olh']);
+const pts=new Map();let gest=null;
+function startPan(ev){const st=document.getElementById('stage');gest={type:'pan',x0:ev.clientX,y0:ev.clientY,sl0:st.scrollLeft,st0:st.scrollTop};cv.style.cursor='grabbing';try{cv.setPointerCapture(ev.pointerId);}catch(_){}}
 cv.addEventListener('pointerdown',ev=>{
   if(ev.button===2)return;
+  pts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+  try{cv.setPointerCapture(ev.pointerId);}catch(_){}
+  if(pts.size>=2){
+    painting=null;releasePB();
+    if(drag){drag=null;ghost.style.display='none';document.body.classList.remove('dragging');}
+    const[a,b]=[...pts.values()];gest={type:'pinch',d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:lastZ||1};return;
+  }
+  if(gest)return;
   const p=pos(ev),h=cellAt(p);
-  if(mode==='sim'){if(h&&D.cells[h.key])actOn(D.cells[h.key],ev);try{cv.setPointerCapture(ev.pointerId);}catch(_){}return;}
+  if(mode==='sim'){const e=h&&D.cells[h.key];if(e&&INPUTS.has(e.type))actOn(e,ev);else startPan(ev);return;}
   for(const zn of (pRows()?['P','C']:['C'])){if(Math.abs(p.y-zoneHeaderY(zn))<13&&p.x>ML-20&&p.x<ML+D.cols*CW+20){editZone(zn);return;}}
   if(p.x>ML+D.cols*CW+6){const r=rowAt(p.y);if(r>=0)editLineName(r);return;}
   if(tool==='select'){
     selected=h&&D.cells[h.key]?h.key:null;renderProps();
+    if(!selected){startPan(ev);return;}
     if(selected)drag={kind:'move',from:selected,el:D.cells[selected],x0:ev.clientX,y0:ev.clientY,started:false};
   }
   else if(tool==='wire'||tool==='erase'){if(h){pushUndo();painting=tool;paint(h);}}
@@ -607,11 +670,15 @@ cv.addEventListener('pointerdown',ev=>{
   try{cv.setPointerCapture(ev.pointerId);}catch(_){}
 });
 cv.addEventListener('pointermove',ev=>{
+  if(pts.has(ev.pointerId))pts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+  if(gest&&gest.type==='pinch'){if(pts.size>=2){const[a,b]=[...pts.values()];applyZoom(gest.z0*Math.hypot(a.x-b.x,a.y-b.y)/gest.d0,(a.x+b.x)/2,(a.y+b.y)/2);}return;}
+  if(gest&&gest.type==='pan'){const st=document.getElementById('stage');st.scrollLeft=gest.sl0-(ev.clientX-gest.x0);st.scrollTop=gest.st0-(ev.clientY-gest.y0);return;}
+  if(gest)return;
   hover=pos(ev);const h=cellAt(hover);
   if(painting&&h)paint(h);
-  if(mode==='sim'){const e=h&&D.cells[h.key];cv.style.cursor=e&&INPUTS.has(e.type)?'pointer':'default';}
+  if(mode==='sim'){const e=h&&D.cells[h.key];cv.style.cursor=e&&INPUTS.has(e.type)?'pointer':'grab';}
   else if(hover.x>ML+D.cols*CW+6&&rowAt(hover.y)>=0||(pRows()?['P','C']:['C']).some(zn=>Math.abs(hover.y-zoneHeaderY(zn))<13))cv.style.cursor='text';
-  else cv.style.cursor=tool==='select'?(h&&D.cells[h.key]?'grab':'default'):'crosshair';
+  else cv.style.cursor=tool==='select'?(h&&D.cells[h.key]?'grab':'move'):'crosshair';
 });
 
 /* ---------- glisser-déposer ---------- */
@@ -654,8 +721,9 @@ function endDrag(ev){
 window.addEventListener('pointerup',endDrag);
 window.addEventListener('pointercancel',()=>endDrag(null));
 cv.addEventListener('pointerleave',()=>{hover=null;});
-window.addEventListener('pointerup',()=>{painting=null;releasePB();});
-window.addEventListener('pointercancel',()=>{painting=null;releasePB();});
+function ptrEnd(ev){pts.delete(ev.pointerId);if(gest&&gest.type==='pinch'&&pts.size>0){gest={type:'wait'};}if(pts.size===0)gest=null;painting=null;releasePB();}
+window.addEventListener('pointerup',ptrEnd);
+window.addEventListener('pointercancel',ptrEnd);
 cv.addEventListener('contextmenu',ev=>{
   ev.preventDefault();if(mode!=='edit')return;
   const p=pos(ev),h=cellAt(p);
@@ -830,13 +898,36 @@ function setMode(m){
   mode=m;document.body.classList.toggle('sim',m==='sim');
   $('mEdit').classList.toggle('on',m==='edit');$('mSim').classList.toggle('on',m==='sim');
   selected=null;renderProps();
+  const sh=document.getElementById('sideHandleT');if(sh)sh.textContent=m==='sim'?'Panneau de commande':'Propriétés et commandes';
 }
-function setZoom(f,z){fit=f;if(!f)zoom=Math.round(Math.max(.3,Math.min(2,z))*10)/10;$('zFit').classList.toggle('on',fit);}
 $('zDel').onclick=()=>{if(!selected)return;pushUndo();delete D.cells[selected];selected=null;changed();renderProps();};
-$('zProps').onclick=()=>{$('props').scrollIntoView({behavior:'smooth',block:'start'});};
-$('zFit').onclick=()=>setZoom(true);
-$('zIn').onclick=()=>setZoom(false,(fit?cssScale(lastW):zoom)+.1);
-$('zOut').onclick=()=>setZoom(false,(fit?cssScale(lastW):zoom)-.1);
+$('zProps').onclick=()=>{if(isMobile())openSheet(true);else{ui.side=true;applyUI();}};
+$('zFit').onclick=()=>{fit=true;$('zFit').classList.add('on');};
+$('zIn').onclick=()=>applyZoom((lastZ||1)*1.2);
+$('zOut').onclick=()=>applyZoom((lastZ||1)/1.2);
+$('stage').addEventListener('wheel',ev=>{if(!(ev.ctrlKey||ev.metaKey))return;ev.preventDefault();applyZoom((lastZ||1)*Math.exp(-ev.deltaY*0.0025),ev.clientX,ev.clientY);},{passive:false});
+/* ---------- menu et panneaux ---------- */
+const menu=$('menu');
+$('bMenu').onclick=ev=>{ev.stopPropagation();menu.hidden=!menu.hidden;};
+document.addEventListener('pointerdown',ev=>{if(!menu.hidden&&!menu.contains(ev.target)&&ev.target!==$('bMenu'))menu.hidden=true;});
+menu.addEventListener('click',ev=>{const b=ev.target.closest('.mi');if(b&&b.id!=='bPower')menu.hidden=true;});
+$('exSel').addEventListener('change',()=>{menu.hidden=true;});
+const isMobile=()=>window.innerWidth<=900;
+let ui={pal:true,side:true};try{Object.assign(ui,JSON.parse(localStorage.getItem('simrelais.ui')||'{}'));}catch(_){}
+function applyUI(){
+  document.body.classList.toggle('hidePal',!ui.pal);document.body.classList.toggle('hideSide',!ui.side);
+  $('tPal').classList.toggle('on',ui.pal);$('tSide').classList.toggle('on',ui.side);
+  $('mPalK').textContent=ui.pal?'affichée':'cachée';$('mSideK').textContent=ui.side?'affiché':'caché';
+  try{localStorage.setItem('simrelais.ui',JSON.stringify(ui));}catch(_){}
+}
+$('tPal').onclick=$('mPal').onclick=()=>{ui.pal=!ui.pal;applyUI();};
+$('tSide').onclick=$('mSide').onclick=()=>{ui.side=!ui.side;applyUI();};
+function openSheet(o){const sd=$('side');sd.classList.toggle('open',o);$('sideHandleA').textContent=o?'▼':'▲';if(o)sd.scrollTop=0;}
+$('sideHandle').onclick=()=>openSheet(!$('side').classList.contains('open'));
+$('mHelp').onclick=()=>{if(isMobile())openSheet(true);else{ui.side=true;applyUI();}const h=$('help');h.open=true;setTimeout(()=>h.scrollIntoView({behavior:'smooth',block:'start'}),300);};
+applyUI();
+if(isMobile()){fit=false;zoom=.85;$('zFit').classList.remove('on');}
+
 $('mEdit').onclick=()=>setMode('edit');$('mSim').onclick=()=>setMode('sim');
 
 /* ---------- exemples ---------- */
@@ -915,7 +1006,7 @@ function shiftRows(fn){
 }
 function insertRows(at,n){shiftRows(r=>r>=at?r+n:r);D.rows+=n;}
 function deleteRows(at,n){shiftRows(r=>r<at?r:(r<at+n?null:r-n));D.rows-=n;}
-function updPowerBtn(){$('bPower').classList.toggle('on',!!(D.power&&D.power.enabled));}
+function updPowerBtn(){const on=!!(D.power&&D.power.enabled);$('bPower').classList.toggle('on',on);$('bPowerK').textContent=on?'oui':'non';}
 $('bPower').onclick=()=>{
   pushUndo();
   if(D.power.enabled){deleteRows(0,pRows());D.power.enabled=false;}
@@ -965,9 +1056,9 @@ let installEvt=null;
 window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installEvt=ev;$('bInstall').hidden=false;});
 window.addEventListener('appinstalled',()=>{installEvt=null;$('bInstall').hidden=true;});
 $('bInstall').onclick=async()=>{if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice;}catch(_){}installEvt=null;$('bInstall').hidden=true;};
-if('serviceWorker' in navigator&&window.isSecureContext){
-  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
-}
+try{if('serviceWorker' in navigator&&window.isSecureContext&&!/claude\.ai|claudeusercontent/.test(location.host)){
+  window.addEventListener('load',()=>{try{navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(_){}});
+}}catch(_){}
 
 /* ---------- boucle ---------- */
 let prev=performance.now();
