@@ -15,3 +15,7 @@ Simulateur interactif de schémas à relais (diagramme en échelle) pour la form
 ## Mettre à jour
 
 Remplacer `index.html` dans le dépôt. Les appareils reçoivent la nouvelle version à la prochaine ouverture avec Internet.
+
+## Publier une nouvelle version
+
+Dans `index.html`, augmenter `VERSION` et ajouter une entrée en tête de `CHANGELOG`. Les utilisateurs voient un avis des nouveautés une seule fois, à la première ouverture après la mise à jour. Augmenter aussi le nom du cache dans `sw.js` (`simrelais-vN`).
