@@ -255,6 +255,7 @@ button.io{cursor:pointer}.plc .io.forced{border-color:#ffb347}
       <summary>Comment ça marche</summary>
       <ul>
         <li><b>Montage</b> : glisse un symbole de la palette jusqu'à une case (ou choisis-le, puis clique dans les cases). Glisse un symbole déjà placé pour le déplacer; sur une case occupée, les deux s'échangent. Ctrl + glisser fait une copie.</li><li> Avec l'outil <b>Fil</b>, glisse pour tracer plusieurs fils d'un coup.</li>
+        <li><b>Écran tactile</b> : glisser un doigt déplace l'écran, deux doigts zooment. Toucher = placer, sélectionner ou effacer. <b>Appui long</b> puis glisser = tracer des fils, encadrer une sélection ou déplacer (outil Déplacer).</li>
         <li><b>Onglets</b> : Relais, Électronique, Moteur monophasé, Moteur triphasé, Automate. Chaque onglet garde son propre schéma.</li>
         <li><b>Mesures</b> : place un voltmètre (Maj+V) en parallèle, un ampèremètre (Maj+A) en série, ou une sonde d'oscilloscope (Maj+S). Les valeurs s'affichent sur le schéma et dans le panneau. La puissance des charges se règle dans leurs propriétés.</li>
         <li><b>Triphasé</b> : le circuit de puissance est vertical (L1 L2 L3). Le contacteur 3 pôles suit la bobine du même repère. L'outil <b>Pont</b> relie deux conducteurs (glisse d'un point à l'autre) pour croiser les phases. En simulation, clique un fusible pour le griller et voir une perte de phase.</li>
@@ -546,6 +547,7 @@ function fitText(c,txt,x,y,maxW,font,color){
 const CODE={no:'NO',nf:'NF',ol:'NF'};
 function timedCode(e){const m=timerCfg(e.tag).mode;if(e.type==='tno')return m==='TON'?'NO-TF':'NO-TO';return m==='TON'?'NF-TO':'NF-TF';}
 
+let holdFlash=0;
 let lastW=0,lastH=0,lastZ=0,zoom=1,fit=true;
 function sizeCanvas(){
   layoutTop();const W=canvasW(),H=canvasH(),z=cssScale(W);
@@ -578,6 +580,7 @@ function draw(R,fl,t,T,tfl){
   const pw=Math.round(W*dpr),ph=Math.round(H*dpr);
   if(cv.width!==pw||cv.height!==ph){cv.width=pw;cv.height=ph;}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  if(holdFlash&&t-holdFlash<450&&hover){const a=1-(t-holdFlash)/450;ctx.save();ctx.strokeStyle=`rgba(28,100,209,${a})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(hover.x,hover.y,14+(1-a)*22,0,7);ctx.stroke();ctx.restore();}
   if(triOn())drawTri(T,tfl||new Set(),t);
   const pot=n=>R.A.has(n)?HOT:(R.B.has(n)?NEU:DEAD);
   const liveZ={C:S.power&&S.fuse,P:S.power&&S.fuseP};
@@ -799,17 +802,26 @@ function finishRect(){
   selSet=ns;selLinks=nl;selected=null;normSel();
 }
 function startPan(ev){const st=document.getElementById('stage');gest={type:'pan',x0:ev.clientX,y0:ev.clientY,sl0:st.scrollLeft,st0:st.scrollTop};cv.style.cursor='grabbing';try{cv.setPointerCapture(ev.pointerId);}catch(_){}}
-cv.addEventListener('pointerdown',ev=>{
+let tpend=null;
+function onDown(ev){
   if(ev.button===2)return;
   pts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
   try{cv.setPointerCapture(ev.pointerId);}catch(_){}
   if(pts.size>=2){
     painting=null;releasePB();
     if(drag){drag=null;ghost.style.display='none';document.body.classList.remove('dragging');}
+    if(tpend){clearTimeout(tpend.timer);tpend=null;}
     rect=null;const[a,b]=[...pts.values()],cr=cv.getBoundingClientRect(),oz=lastZ||1,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
     gest={type:'pinch',d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:oz,px:(mx-cr.left)/oz,py:(my-cr.top)/oz};return;
   }
   if(gest)return;
+  // Écran tactile, mode Montage : glisser = déplacer l'écran; toucher = action; appui long puis glisser = geste de l'outil.
+  if(ev.pointerType&&ev.pointerType!=='mouse'&&mode==='edit'&&!ev._go){
+    const st=document.getElementById('stage');
+    tpend={ev,id:ev.pointerId,x0:ev.clientX,y0:ev.clientY,sl0:st.scrollLeft,st0:st.scrollTop,
+      timer:setTimeout(()=>{if(!tpend)return;const e=tpend.ev;tpend=null;e._go=true;try{navigator.vibrate&&navigator.vibrate(25);}catch(_){}holdFlash=performance.now();hover=pos(e);onDown(e);},420)};
+    return;
+  }
   const p=pos(ev),h=cellAt(p);
   if(ev.button===1||spaceDown){ev.preventDefault();startPan(ev);return;}
   if(mode==='sim'){
@@ -843,9 +855,14 @@ cv.addEventListener('pointerdown',ev=>{
   else if(tool==='branch'){const b=branchAt(p);if(b){pushUndo();if(D.vlinks[b])delete D.vlinks[b];else D.vlinks[b]=1;changed();}}
   else if(h){pushUndo();place(tool,h);}
   try{cv.setPointerCapture(ev.pointerId);}catch(_){}
-});
+}
+cv.addEventListener('pointerdown',onDown);
 cv.addEventListener('pointermove',ev=>{
   if(pts.has(ev.pointerId))pts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+  if(tpend&&ev.pointerId===tpend.id){
+    if(Math.hypot(ev.clientX-tpend.x0,ev.clientY-tpend.y0)>10){clearTimeout(tpend.timer);gest={type:'pan',x0:tpend.x0,y0:tpend.y0,sl0:tpend.sl0,st0:tpend.st0};tpend=null;}
+    else return;
+  }
   if(gest&&gest.type==='pinch'){if(pts.size>=2){const[a,b]=[...pts.values()];applyZoom(gest.z0*Math.hypot(a.x-b.x,a.y-b.y)/gest.d0,(a.x+b.x)/2,(a.y+b.y)/2,gest.px,gest.py);}return;}
   if(gest&&gest.type==='pan'){const st=document.getElementById('stage');st.scrollLeft=gest.sl0-(ev.clientX-gest.x0);st.scrollTop=gest.st0-(ev.clientY-gest.y0);return;}
   if(gest)return;
@@ -906,6 +923,8 @@ window.addEventListener('pointerup',endDrag);
 window.addEventListener('pointercancel',()=>endDrag(null));
 cv.addEventListener('pointerleave',()=>{hover=null;});
 function ptrEnd(ev){
+  if(tpend&&ev&&ev.pointerId===tpend.id){clearTimeout(tpend.timer);const e=tpend.ev;tpend=null;e._go=true;onDown(e);
+    if(drag&&!drag.started)drag=null;}
   if(linkStart){const n=ev&&ev.clientX!=null?triNodeAt(pos(ev)):null;if(n&&n.r===linkStart.r&&n.c!==linkStart.c){pushUndo();const a=Math.min(n.c,linkStart.c),b=Math.max(n.c,linkStart.c),k=n.r+','+a+','+b;if(D.tri.links[k])delete D.tri.links[k];else D.tri.links[k]=1;changed();}linkStart=null;}
   if(rect){if(rect.started)finishRect();rect=null;}pts.delete(ev.pointerId);if(gest&&gest.type==='pinch'&&pts.size>0){gest={type:'wait'};}if(pts.size===0)gest=null;painting=null;releasePB();}
 window.addEventListener('pointerup',ptrEnd);
@@ -1796,8 +1815,9 @@ document.getElementById('tabs').addEventListener('click',ev=>{const b=ev.target.
 window.addEventListener('hashchange',()=>{const p=profFromHash();if(p&&p!==PROF)switchProfile(p,true);});
 
 /* ---------- version et nouveautés ---------- */
-const VERSION='2.0';
+const VERSION='2.1';
 const CHANGELOG=[
+ ['2.1','Tactile plus facile',['Sur téléphone et tablette, glisser un doigt déplace toujours l\'écran.','Toucher (sans glisser) place, sélectionne ou efface selon l\'outil.','Appui long (petit cercle bleu et vibration), puis glisser : tracer des fils, encadrer une sélection ou déplacer des symboles.','Deux doigts : zoom.']],
  ['2.0','Mise à jour majeure : onglets et appareils de mesure',['Onglets : Relais, Électronique, Moteur monophasé, Moteur triphasé et Automate. Chaque onglet garde son propre schéma.','Voltmètre, ampèremètre et oscilloscope (tensions et courants calculés).','Moteur monophasé : branchement L1-L2 (240 V) ou L1-N (120 V), sectionneur, contacteur, surcharge.','Moteur triphasé : L1, L2, L3, contacteur 3 pôles, sens de rotation, inversion, perte de phase et court-circuit entre phases.','Automate : branchement des entrées (I) et des sorties (Q), forçage des sorties ou copie directe.']],
  ['1.5','Affichage stable et avis de mise à jour',['Correction : le schéma ne vibre plus sur certains écrans quand les panneaux sont ouverts.','Le numéro de version et les nouveautés sont affichés au bas du menu.','Un avis comme celui-ci s\'affiche une seule fois après chaque mise à jour.']],
  ['1.4','Sélection et déplacement',['Vraie sélection : clic, rectangle, Maj+clic, Ctrl+A.','Nouvel outil Déplacer (D), copier-coller (Ctrl+C/X/V/D).','G ou Suppr efface ce qui est sous la souris.']],
