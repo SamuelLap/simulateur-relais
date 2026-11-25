@@ -1,7 +1,7 @@
 // Service worker : l'application fonctionne sans Internet.
 // La page est d'abord demandée au réseau (pour recevoir les mises à jour), sinon la copie en cache est utilisée.
-const CACHE = 'simrelais-v5';
-const FILES = ['./', './index.html', './manifest.webmanifest',
+const CACHE = 'simrelais-v6';
+const FILES = ['./', './index.html', './electronique.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png', './icons/favicon.png'];
 
