@@ -110,6 +110,15 @@ header .btn.on{background:#ffb347;color:#16202b;border-color:#ffb347;font-weight
 #news .box{background:#fff;border-radius:12px;padding:18px;width:min(520px,92vw);max-height:85vh;overflow:auto}
 #news h3{margin:0 0 4px;font-size:17px}#news h4{margin:14px 0 4px;font-size:13px;color:#33475b}#news ul{margin:4px 0;padding-left:20px;font-size:13.5px;line-height:1.55}
 #news .pri{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:8px 18px;font:inherit;cursor:pointer}
+#saves{position:fixed;inset:0;background:rgba(15,23,32,.55);display:grid;place-items:center;z-index:12}#saves[hidden]{display:none}
+#saves .box{background:#fff;border-radius:12px;padding:16px;width:min(640px,94vw);max-height:86vh;overflow:auto}
+.svnote{font-size:12.5px;color:var(--muted);margin:6px 0 10px}
+.svf{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}.svf button{border:1px solid #cfd6de;background:#f8fafc;border-radius:14px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}.svf button.on{background:#16202b;color:#fff;border-color:#16202b}
+.svi{display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.svi .nm{flex:1;min-width:150px}.svi .nm b{display:block;font-size:14px}.svi .nm small{color:var(--muted);font-size:12px}
+.svi.cur{background:#f2f7ff;border-radius:8px}
+.svb{border:1px solid #cfd6de;background:#f8fafc;border-radius:6px;padding:6px 10px;font:inherit;font-size:12.5px;cursor:pointer}.svb.pri{background:var(--accent);color:#fff;border-color:var(--accent)}.svb.del{color:#b42318;border-color:#f1b4b4;background:#fff}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#16202b;color:#fff;padding:9px 16px;border-radius:20px;font-size:13.5px;z-index:40;box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none;transition:opacity .3s}#toast[hidden]{display:none}
 #modal{position:fixed;inset:0;background:rgba(15,23,32,.55);display:grid;place-items:center;z-index:10}
 #modal[hidden]{display:none}
 #modal .box{background:#fff;border-radius:12px;padding:16px;width:min(640px,92vw)}
@@ -211,8 +220,14 @@ button.io{cursor:pointer}.plc .io.forced{border-color:#ffb347}
     <div class="row"><span>↕ Lignes</span><button id="rMinus">−</button><button id="rPlus">+</button></div>
     <div class="row"><span>↔ Colonnes</span><button id="cMinus">−</button><button id="cPlus">+</button></div>
     <hr><h4>Fichier</h4>
-    <button class="mi" id="bExport">📤 Exporter le schéma</button>
-    <button class="mi" id="bImport">📥 Importer un schéma</button>
+    <button class="mi" id="bSave">💾 Enregistrer <span class="k">Ctrl+S</span></button>
+    <button class="mi" id="bSaveAs">💾 Enregistrer sous…</button>
+    <button class="mi" id="bMine">📂 Mes schémas <span class="k">Ctrl+O</span></button>
+    <button class="mi" id="bDown">⬇️ Télécharger le fichier</button>
+    <button class="mi" id="bOpenFile">📄 Ouvrir un fichier…</button>
+    <button class="mi" id="bExport">📋 Copier le schéma (texte)</button>
+    <button class="mi" id="bImport">📋 Coller un schéma (texte)</button>
+    <input type="file" id="openFile" accept=".json,.simrelais,application/json,text/plain" hidden>
     <button class="mi" id="bInstall" hidden>📲 Installer l'application</button>
     <hr><h4>Affichage</h4>
     <button class="mi" id="mPal">🧰 Palette <span class="k" id="mPalK"></span></button>
@@ -281,6 +296,12 @@ button.io{cursor:pointer}.plc .io.forced{border-color:#ffb347}
   <div class="mrow"><span class="sp"></span><button type="button" class="pri" id="newsOk">OK</button></div></div></div>
 <div id="fmodal" class="fm" hidden><form class="box" id="fform"><h3 id="ftitle"></h3><div id="ffields"></div>
   <div class="mrow"><span class="sp"></span><button type="button" id="fcancel">Annuler</button><button type="submit" class="pri">OK</button></div></form></div>
+<div id="saves" hidden><div class="box">
+  <div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0">📂 Mes schémas</h3><span class="sp"></span><button id="svClose" class="svb">Fermer</button></div>
+  <p class="svnote">Enregistrés dans cet appareil seulement (ce navigateur ou l'application installée). Personne d'autre ne les voit.</p>
+  <div id="svFilter" class="svf"></div><div id="svList"></div><p id="svMsg" class="svnote"></p>
+</div></div>
+<div id="toast" hidden></div>
 <div id="modal" hidden><div class="box">
   <h3 id="mt"></h3><p id="mp"></p>
   <textarea id="mta" spellcheck="false"></textarea>
@@ -1442,6 +1463,71 @@ function editZone(zn){
     changed();renderProps();},'La tension sert aux voltmètres, ampèremètres et à l\'oscilloscope. Un rail de droite nommé L2 donne un 240 V à point milieu; N, X2 ou 0V est relié à la terre.');
 }
 
+/* ---------- mes schémas (stockage local de l'appareil) ---------- */
+const SVKEY='simrelais.saves';
+let curSave=null; // id du schéma ouvert
+function svAll(){try{return JSON.parse(localStorage.getItem(SVKEY)||'[]');}catch(_){return[];}}
+function svPut(list){try{localStorage.setItem(SVKEY,JSON.stringify(list));return true;}catch(_){toast('⚠ Mémoire de l\'appareil pleine : impossible d\'enregistrer.');return false;}}
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;t.style.opacity=1;clearTimeout(toast.h);toast.h=setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.hidden=true,300);},2200);}
+function snapshot(){return Object.assign(JSON.parse(JSON.stringify(D)),{prof:PROF,app:'simrelais',version:VERSION});}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(_){}
+function saveAs(){
+  const cur=svAll().find(x=>x.id===curSave);
+  openForm('Enregistrer le schéma',[{id:'n',label:'Nom du schéma',value:cur?cur.name+' (copie)':'',ph:'ex. Labo 3 – inversion de marche'}],v=>{
+    const name=v.n.trim()||('Schéma du '+new Date().toLocaleDateString('fr-CA'));
+    const list=svAll(),it={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,prof:PROF,date:Date.now(),data:snapshot()};
+    list.unshift(it);if(svPut(list)){curSave=it.id;toast('💾 Enregistré : '+name);}
+  },'Le schéma reste dans cet appareil. Pour le donner à quelqu\'un, utilise « Télécharger le fichier ».');
+}
+function saveNow(){
+  const list=svAll(),i=list.findIndex(x=>x.id===curSave);
+  if(i<0||list[i].prof!==PROF){saveAs();return;}
+  list[i].data=snapshot();list[i].date=Date.now();if(svPut(list))toast('💾 Enregistré : '+list[i].name);
+}
+function openData(o,name){
+  if(o.prof&&PROFILES[o.prof]&&o.prof!==PROF)switchProfile(o.prof);
+  pushUndo();loadData(o);S=freshState();updPowerBtn();setMode('edit');if(name)toast('📂 Ouvert : '+name);
+}
+let svFilt='all';
+function renderSaves(){
+  const list=svAll(),fl=svFilt==='all'?list:list.filter(x=>x.prof===svFilt);
+  $('svFilter').innerHTML=[['all','Tous'],...Object.entries(PROFILES).map(([k,p])=>[k,p.name])].map(([k,n])=>`<button data-f="${k}" class="${svFilt===k?'on':''}">${esc(n)} (${k==='all'?list.length:list.filter(x=>x.prof===k).length})</button>`).join('');
+  $('svList').innerHTML=fl.length?fl.map(x=>`<div class="svi ${x.id===curSave?'cur':''}" data-id="${x.id}"><div class="nm"><b>${esc(x.name)}</b><small>${esc((PROFILES[x.prof]||{}).name||'')} · ${new Date(x.date).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'})}</small></div>
+    <button class="svb pri" data-a="open">Ouvrir</button><button class="svb" data-a="ren">Renommer</button><button class="svb" data-a="dl">⬇️</button><button class="svb del" data-a="del">🗑</button></div>`).join('')
+    :'<p class="svnote">Aucun schéma enregistré. Utilise ☰ Menu → 💾 Enregistrer.</p>';
+}
+function openSaves(){menu.hidden=true;$('svMsg').textContent='';renderSaves();$('saves').hidden=false;}
+$('svClose').onclick=()=>{$('saves').hidden=true;};
+$('saves').addEventListener('click',ev=>{
+  if(ev.target.id==='saves'){$('saves').hidden=true;return;}
+  const f=ev.target.closest('[data-f]');if(f){svFilt=f.dataset.f;renderSaves();return;}
+  const b=ev.target.closest('[data-a]');if(!b)return;const id=b.closest('.svi').dataset.id,list=svAll(),it=list.find(x=>x.id===id);if(!it)return;
+  if(b.dataset.a==='open'){$('saves').hidden=true;openData(it.data,it.name);curSave=it.id;}
+  else if(b.dataset.a==='dl')downloadFile(it.data,it.name);
+  else if(b.dataset.a==='ren'){$('saves').hidden=true;openForm('Renommer',[{id:'n',label:'Nouveau nom',value:it.name}],v=>{const l=svAll(),x=l.find(y=>y.id===id);if(x&&v.n.trim()){x.name=v.n.trim();svPut(l);}openSaves();});}
+  else if(b.dataset.a==='del'){if(b.dataset.ok){svPut(list.filter(x=>x.id!==id));if(curSave===id)curSave=null;renderSaves();$('svMsg').textContent='« '+it.name+' » supprimé.';}
+    else{b.dataset.ok='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){delete b.dataset.ok;b.textContent='🗑';}},3000);}}
+});
+async function downloadFile(data,name){
+  const nm=(name||('schema-'+PROF)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'schema';
+  const txt=JSON.stringify(data||snapshot(),null,1),fname=nm+'.json',blob=new Blob([txt],{type:'application/json'});
+  // Téléphone : feuille de partage (Enregistrer dans Fichiers, Drive, courriel…)
+  try{const file=new File([blob],fname,{type:'application/json'});
+    if(matchMedia('(pointer:coarse)').matches&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name||'Schéma'});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);toast('⬇️ Fichier : '+fname);}
+  catch(_){openModal('export');}
+}
+$('bSave').onclick=saveNow;$('bSaveAs').onclick=saveAs;$('bMine').onclick=openSaves;
+$('bDown').onclick=()=>{const it=svAll().find(x=>x.id===curSave);downloadFile(null,it&&it.prof===PROF?it.name:null);};
+$('bOpenFile').onclick=()=>$('openFile').click();
+$('openFile').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o||!o.cells)throw 0;curSave=null;openData(o,f.name);}catch(_){toast('⚠ Ce fichier n\'est pas un schéma valide.');}};rd.readAsText(f);ev.target.value='';};
+document.addEventListener('keydown',ev=>{
+  if(!(ev.ctrlKey||ev.metaKey))return;const k=ev.key.toLowerCase();
+  if(k==='s'){ev.preventDefault();if(ev.shiftKey)saveAs();else saveNow();}
+  else if(k==='o'){ev.preventDefault();openSaves();}
+},true);
+
 /* ---------- export / import ---------- */
 const modal=$('modal');
 function openModal(kind){
@@ -1449,14 +1535,14 @@ function openModal(kind){
   const imp=kind==='import';
   $('mt').textContent=imp?'Importer un schéma':'Exporter le schéma';
   $('mp').textContent=imp?'Colle le texte d\'un schéma exporté, ou choisis un fichier .json.':'Copie ce texte et garde-le dans un fichier .json (ou envoie-le à tes élèves). Ils pourront le recharger avec « Importer ».';
-  $('mta').value=imp?'':JSON.stringify(D);$('mta').readOnly=!imp;
+  $('mta').value=imp?'':JSON.stringify(snapshot());$('mta').readOnly=!imp;
   $('mload').hidden=!imp;$('mfile').hidden=!imp;$('mcopy').hidden=imp;
 }
 $('bExport').onclick=()=>openModal('export');$('bImport').onclick=()=>openModal('import');
 $('mclose').onclick=()=>{modal.hidden=true;};
 $('mcopy').onclick=async()=>{const ta=$('mta');try{await navigator.clipboard.writeText(ta.value);$('mmsg').textContent='Copié dans le presse-papiers.';}catch(_){ta.select();$('mmsg').textContent='Texte sélectionné : fais Ctrl+C pour le copier.';}};
 $('mfile').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$('mta').value=rd.result;};rd.readAsText(f);};
-$('mload').onclick=()=>{try{const o=JSON.parse($('mta').value);pushUndo();loadData(o);modal.hidden=true;}catch(_){$('mmsg').textContent='Ce texte n\'est pas un schéma valide.';$('mmsg').style.color='#b42318';}};
+$('mload').onclick=()=>{try{const o=JSON.parse($('mta').value);if(!o||!o.cells)throw 0;modal.hidden=true;curSave=null;openData(o);}catch(_){$('mmsg').textContent='Ce texte n\'est pas un schéma valide.';$('mmsg').style.color='#b42318';}};
 
 /* ======================================================================
    v2.0 : profils (onglets), mesures (phaseurs), triphasé, automate
@@ -1815,8 +1901,9 @@ document.getElementById('tabs').addEventListener('click',ev=>{const b=ev.target.
 window.addEventListener('hashchange',()=>{const p=profFromHash();if(p&&p!==PROF)switchProfile(p,true);});
 
 /* ---------- version et nouveautés ---------- */
-const VERSION='2.1';
+const VERSION='2.2';
 const CHANGELOG=[
+ ['2.2','Enregistrer ses schémas',['☰ Menu → 💾 Enregistrer (Ctrl+S) garde le schéma dans ton appareil, avec un nom.','📂 Mes schémas (Ctrl+O) : ouvrir, renommer, supprimer, trié par onglet.','⬇️ Télécharger le fichier (.json) pour le garder ou le donner à quelqu\'un; sur téléphone, le partage permet de l\'enregistrer dans Fichiers ou Drive.','📄 Ouvrir un fichier recharge un schéma téléchargé, et ouvre le bon onglet.']],
  ['2.1','Tactile plus facile',['Sur téléphone et tablette, glisser un doigt déplace toujours l\'écran.','Toucher (sans glisser) place, sélectionne ou efface selon l\'outil.','Appui long (petit cercle bleu et vibration), puis glisser : tracer des fils, encadrer une sélection ou déplacer des symboles.','Deux doigts : zoom.']],
  ['2.0','Mise à jour majeure : onglets et appareils de mesure',['Onglets : Relais, Électronique, Moteur monophasé, Moteur triphasé et Automate. Chaque onglet garde son propre schéma.','Voltmètre, ampèremètre et oscilloscope (tensions et courants calculés).','Moteur monophasé : branchement L1-L2 (240 V) ou L1-N (120 V), sectionneur, contacteur, surcharge.','Moteur triphasé : L1, L2, L3, contacteur 3 pôles, sens de rotation, inversion, perte de phase et court-circuit entre phases.','Automate : branchement des entrées (I) et des sorties (Q), forçage des sorties ou copie directe.']],
  ['1.5','Affichage stable et avis de mise à jour',['Correction : le schéma ne vibre plus sur certains écrans quand les panneaux sont ouverts.','Le numéro de version et les nouveautés sont affichés au bas du menu.','Un avis comme celui-ci s\'affiche une seule fois après chaque mise à jour.']],
